@@ -41,6 +41,5 @@ jobs:
           AI_MODEL: ${{ secrets.AI_MODEL }}
           FEISHU_WEBHOOK_URL: ${{ secrets.FEISHU_WEBHOOK_URL }}
           TOP_N: ${{ secrets.TOP_N }}
-        working-directory: newscatcher
         run: python main.py
 
