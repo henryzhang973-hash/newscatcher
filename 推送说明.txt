@@ -1,0 +1,39 @@
+========================================
+NewsCatcher 推送说明
+========================================
+
+问题已修复：
+✅ 远程 URL 已更正为：henryzhang973-hash
+
+现在请按以下步骤操作：
+
+方法一：使用脚本（推荐）
+------------------------
+运行：./直接推送.sh
+然后输入你的 Personal Access Token
+
+方法二：手动推送
+------------------------
+1. 确保仓库已创建：
+   访问：https://github.com/new
+   创建仓库：newscatcher
+
+2. 推送代码：
+   git push -u origin main
+   
+   当提示输入时：
+   Username: henryzhang973-hash
+   Password: 粘贴你的 Token（不是密码！）
+
+方法三：使用 Token 环境变量
+------------------------
+export GITHUB_TOKEN="你的Token"
+./直接推送.sh
+
+如果推送失败，请检查：
+1. 仓库是否已创建
+2. Token 是否有 repo 权限
+3. Token 是否有效
+
+获取 Token：
+https://github.com/settings/tokens
