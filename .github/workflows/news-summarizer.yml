@@ -35,32 +35,73 @@ jobs:
       
       - name: Verify configuration
         run: |
+          echo "=========================================="
+          echo "配置验证"
+          echo "=========================================="
+          echo ""
+          echo "当前工作目录: $(pwd)"
+          echo "文件列表:"
+          ls -la
+          echo ""
           echo "🔍 检查配置文件..."
           if [ ! -f config.yaml ]; then
             echo "❌ 错误: config.yaml 文件不存在"
-            ls -la
+            echo "查找的文件: $(pwd)/config.yaml"
             exit 1
           fi
-          echo "✅ 配置文件存在"
+          echo "✅ 配置文件存在: config.yaml"
           echo ""
           echo "🔍 检查必需的 Secrets..."
           if [ -z "${{ secrets.AI_API_KEY }}" ]; then
             echo "❌ 错误: AI_API_KEY 未配置"
+            echo "请在 Settings → Secrets and variables → Actions 中添加 AI_API_KEY"
             exit 1
           fi
+          echo "✅ AI_API_KEY 已配置"
+          
           if [ -z "${{ secrets.FEISHU_WEBHOOK_URL }}" ]; then
             echo "❌ 错误: FEISHU_WEBHOOK_URL 未配置"
+            echo "请在 Settings → Secrets and variables → Actions 中添加 FEISHU_WEBHOOK_URL"
             exit 1
           fi
-          echo "✅ 必需的 Secrets 已配置"
+          echo "✅ FEISHU_WEBHOOK_URL 已配置"
+          
+          if [ -z "${{ secrets.AI_BASE_URL }}" ]; then
+            echo "⚠️  警告: AI_BASE_URL 未配置，将使用默认值"
+          else
+            echo "✅ AI_BASE_URL 已配置: ${{ secrets.AI_BASE_URL }}"
+          fi
+          
+          if [ -z "${{ secrets.AI_MODEL }}" ]; then
+            echo "⚠️  警告: AI_MODEL 未配置，将使用默认值"
+          else
+            echo "✅ AI_MODEL 已配置: ${{ secrets.AI_MODEL }}"
+          fi
+          
+          echo ""
+          echo "✅ 配置验证通过"
+          echo "=========================================="
       
       - name: Run news summarizer
         env:
           AI_API_KEY: ${{ secrets.AI_API_KEY }}
-          AI_PROVIDER: ${{ secrets.AI_PROVIDER }}
+          AI_PROVIDER: ${{ secrets.AI_PROVIDER || 'openai' }}
           AI_BASE_URL: ${{ secrets.AI_BASE_URL }}
           AI_MODEL: ${{ secrets.AI_MODEL }}
           FEISHU_WEBHOOK_URL: ${{ secrets.FEISHU_WEBHOOK_URL }}
-          TOP_N: ${{ secrets.TOP_N }}
-        run: python main.py
+          TOP_N: ${{ secrets.TOP_N || '10' }}
+        run: |
+          echo "=========================================="
+          echo "开始运行新闻总结程序"
+          echo "=========================================="
+          echo ""
+          echo "环境变量检查："
+          echo "  AI_API_KEY: ${AI_API_KEY:0:10}... (已设置)"
+          echo "  AI_PROVIDER: ${AI_PROVIDER:-未设置，使用默认值 openai}"
+          echo "  AI_BASE_URL: ${AI_BASE_URL:-未设置}"
+          echo "  AI_MODEL: ${AI_MODEL:-未设置，使用默认值}"
+          echo "  FEISHU_WEBHOOK_URL: ${FEISHU_WEBHOOK_URL:0:30}... (已设置)"
+          echo "  TOP_N: ${TOP_N:-10}"
+          echo ""
+          python main.py
 

@@ -300,26 +300,38 @@ def main():
     print("=" * 80)
     print("热点新闻总结程序")
     print("=" * 80)
+    print(f"当前工作目录: {os.getcwd()}")
+    print(f"Python 版本: {sys.version}")
+    print("=" * 80)
     
     try:
         # 加载配置
         print("\n[1/4] 加载配置...")
+        print(f"  查找配置文件: {os.environ.get('CONFIG_PATH', 'config.yaml')}")
         config = load_config()
         print(f"  ✓ 配置加载成功")
         print(f"  - 监控平台: {len(config['platforms'])} 个")
         print(f"  - 每个平台抓取: 前 {config['top_n']} 条")
         print(f"  - AI 模型: {config['ai']['model']}")
+        print(f"  - AI Provider: {config['ai']['provider']}")
+        print(f"  - AI Base URL: {config['ai']['base_url'] or '默认'}")
         
         # 检查 AI 配置
+        print(f"\n  检查 AI 配置...")
+        print(f"  - AI_API_KEY: {'已配置' if config['ai']['api_key'] else '❌ 未配置'}")
         if not config['ai']['api_key']:
             print("\n❌ 错误: 未配置 AI_API_KEY")
             print("请在 GitHub Secrets 中添加 AI_API_KEY")
+            print(f"当前环境变量: AI_API_KEY={'已设置' if os.environ.get('AI_API_KEY') else '未设置'}")
             sys.exit(1)
         
         # 检查飞书配置
+        print(f"  检查飞书配置...")
+        print(f"  - FEISHU_WEBHOOK_URL: {'已配置' if config['feishu_webhook'] else '❌ 未配置'}")
         if not config['feishu_webhook']:
             print("\n❌ 错误: 未配置 FEISHU_WEBHOOK_URL")
             print("请在 GitHub Secrets 中添加 FEISHU_WEBHOOK_URL")
+            print(f"当前环境变量: FEISHU_WEBHOOK_URL={'已设置' if os.environ.get('FEISHU_WEBHOOK_URL') else '未设置'}")
             sys.exit(1)
         
         # 抓取新闻
@@ -341,14 +353,26 @@ def main():
         
         # AI 总结
         print(f"\n[3/4] 使用 AI 生成总结...")
-        summarizer = AISummarizer(
-            provider=config['ai']['provider'],
-            api_key=config['ai']['api_key'],
-            model=config['ai']['model'],
-            base_url=config['ai']['base_url'] if config['ai']['base_url'] else None,
-        )
+        print(f"  - Provider: {config['ai']['provider']}")
+        print(f"  - Model: {config['ai']['model']}")
+        print(f"  - Base URL: {config['ai']['base_url'] or '默认'}")
+        try:
+            summarizer = AISummarizer(
+                provider=config['ai']['provider'],
+                api_key=config['ai']['api_key'],
+                model=config['ai']['model'],
+                base_url=config['ai']['base_url'] if config['ai']['base_url'] else None,
+            )
+            print("  ✓ AI 客户端初始化成功")
+        except Exception as e:
+            print(f"  ✗ AI 客户端初始化失败: {e}")
+            raise
         
-        summary = summarizer.summarize_news(news_data)
+        try:
+            summary = summarizer.summarize_news(news_data)
+        except Exception as e:
+            print(f"  ✗ AI 总结生成失败: {e}")
+            raise
         
         # 推送到飞书
         print(f"\n[4/4] 推送到飞书...")
