@@ -33,6 +33,27 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
       
+      - name: Verify configuration
+        run: |
+          echo "🔍 检查配置文件..."
+          if [ ! -f config.yaml ]; then
+            echo "❌ 错误: config.yaml 文件不存在"
+            ls -la
+            exit 1
+          fi
+          echo "✅ 配置文件存在"
+          echo ""
+          echo "🔍 检查必需的 Secrets..."
+          if [ -z "${{ secrets.AI_API_KEY }}" ]; then
+            echo "❌ 错误: AI_API_KEY 未配置"
+            exit 1
+          fi
+          if [ -z "${{ secrets.FEISHU_WEBHOOK_URL }}" ]; then
+            echo "❌ 错误: FEISHU_WEBHOOK_URL 未配置"
+            exit 1
+          fi
+          echo "✅ 必需的 Secrets 已配置"
+      
       - name: Run news summarizer
         env:
           AI_API_KEY: ${{ secrets.AI_API_KEY }}

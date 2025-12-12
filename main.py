@@ -6,6 +6,7 @@
 
 import json
 import os
+import sys
 import time
 from datetime import datetime
 from pathlib import Path
@@ -20,6 +21,7 @@ try:
     HAS_OPENAI = True
 except ImportError:
     HAS_OPENAI = False
+    print("⚠️  警告: openai 库未安装，请运行: pip install openai")
 
 
 # === 配置管理 ===
@@ -27,8 +29,20 @@ def load_config() -> Dict:
     """加载配置文件"""
     config_path = os.environ.get("CONFIG_PATH", "config.yaml")
     
-    if not Path(config_path).exists():
-        raise FileNotFoundError(f"配置文件 {config_path} 不存在")
+    # 检查配置文件是否存在
+    config_file = Path(config_path)
+    if not config_file.exists():
+        # 尝试相对路径
+        current_dir = Path.cwd()
+        config_file = current_dir / config_path
+        if not config_file.exists():
+            print(f"❌ 错误: 配置文件不存在")
+            print(f"  查找路径1: {Path(config_path).absolute()}")
+            print(f"  查找路径2: {current_dir / config_path}")
+            print(f"  当前工作目录: {current_dir}")
+            print(f"  文件列表: {list(current_dir.glob('*.yaml')) + list(current_dir.glob('*.yml'))}")
+            raise FileNotFoundError(f"配置文件 {config_path} 不存在")
+        config_path = str(config_file)
     
     with open(config_path, "r", encoding="utf-8") as f:
         config_data = yaml.safe_load(f)
@@ -299,12 +313,14 @@ def main():
         # 检查 AI 配置
         if not config['ai']['api_key']:
             print("\n❌ 错误: 未配置 AI_API_KEY")
-            return
+            print("请在 GitHub Secrets 中添加 AI_API_KEY")
+            sys.exit(1)
         
         # 检查飞书配置
         if not config['feishu_webhook']:
             print("\n❌ 错误: 未配置 FEISHU_WEBHOOK_URL")
-            return
+            print("请在 GitHub Secrets 中添加 FEISHU_WEBHOOK_URL")
+            sys.exit(1)
         
         # 抓取新闻
         print(f"\n[2/4] 抓取各平台热点新闻...")
@@ -320,7 +336,8 @@ def main():
         
         if total_news == 0:
             print("\n⚠️  未获取到任何新闻，程序退出")
-            return
+            print("可能原因：网络问题或数据源暂时不可用")
+            sys.exit(0)  # 正常退出，不是错误
         
         # AI 总结
         print(f"\n[3/4] 使用 AI 生成总结...")
@@ -341,18 +358,29 @@ def main():
             print("\n" + "=" * 80)
             print("✅ 程序执行完成！")
             print("=" * 80)
+            sys.exit(0)
         else:
             print("\n⚠️  飞书推送失败")
-            raise Exception("飞书推送失败")
+            print("AI 总结已生成，但推送到飞书失败")
+            print("请检查 FEISHU_WEBHOOK_URL 是否正确")
+            # 飞书推送失败不应该导致整个程序失败，但记录为警告
+            sys.exit(0)  # 改为正常退出，因为 AI 总结已成功生成
     
     except KeyboardInterrupt:
         print("\n\n⚠️  用户中断程序")
-        raise
+        sys.exit(130)  # 标准的中断退出码
+    except FileNotFoundError as e:
+        print(f"\n\n❌ 配置文件错误: {e}")
+        print(f"当前工作目录: {os.getcwd()}")
+        print(f"查找的配置文件: {os.environ.get('CONFIG_PATH', 'config.yaml')}")
+        import traceback
+        traceback.print_exc()
+        sys.exit(1)
     except Exception as e:
         print(f"\n\n❌ 程序执行出错: {e}")
         import traceback
         traceback.print_exc()
-        raise
+        sys.exit(1)
 
 
 if __name__ == "__main__":
